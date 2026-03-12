@@ -7,6 +7,8 @@
     <string name="chat_app_image">Chat App Image</string>
     <string name="register">Register</string>
     <string name="text_sign_up_button">Sign up</string>
-    <string name="text_view_go_to_profile">Pick a profile photo</string>
+    <string name="text_view_go_to_profile">Pick a profile photo (Optional) </string>
     <string name="hint_username">Username</string>
+    <string name="dialog_button_yes">Yes</string>
+    <string name="dialog_button_no">No</string>
 </resources>

@@ -1,18 +1,25 @@
 package com.example.chatapp
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mBinding: ActivityMainBinding
-    private lateinit var getResult : ActivityResultLauncher<Intent>
+    private lateinit var getResult: ActivityResultLauncher<Intent>
+    private val STORAGE_REQUEST_CODE = 23432
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_main)
@@ -42,11 +49,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         mBinding.profileImage.setOnClickListener {
-            uploadImage()
+            if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity,
+                    android.Manifest.permission.READ_MEDIA_IMAGES
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermission()
+            } else {
+                getImage()
+            }
         }
 
         getResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if(it.resultCode == RESULT_OK) {
+            if (it.resultCode == RESULT_OK) {
                 mBinding.profileImage.setImageURI(it.data?.data)
             }
         }
@@ -124,9 +139,50 @@ class MainActivity : AppCompatActivity() {
         mBinding.flipper.showPrevious()
     }
 
-    private fun uploadImage() {
+    private fun getImage() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
         getResult.launch(intent)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun requestPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(
+                this@MainActivity,
+                android.Manifest.permission.READ_MEDIA_IMAGES
+            )
+        ) {
+            AlertDialog.Builder(this@MainActivity)
+                .setPositiveButton(R.string.dialog_button_yes) { _, _ ->
+                    ActivityCompat.requestPermissions(
+                        this@MainActivity,
+                        arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES),
+                        STORAGE_REQUEST_CODE
+                    )
+                }.setNegativeButton(R.string.dialog_button_no) { dialog, _ ->
+                    dialog.cancel()
+                }.setTitle("Permission Needed")
+                .setMessage("This permission is needed for accessing the internal storage")
+                .show()
+        } else {
+            ActivityCompat.requestPermissions(
+                this@MainActivity,
+                arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES),
+                STORAGE_REQUEST_CODE
+            )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == STORAGE_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            getImage()
+        } else {
+            Toast.makeText(this@MainActivity, "Permission not granted", Toast.LENGTH_LONG).show()
+        }
     }
 }
