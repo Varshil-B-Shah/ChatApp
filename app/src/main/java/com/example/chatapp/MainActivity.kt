@@ -22,15 +22,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         mBinding.textViewRegister.setOnClickListener {
-            mBinding.flipper.setInAnimation(this, android.R.anim.slide_in_left)
-            mBinding.flipper.setOutAnimation(this, android.R.anim.slide_out_right)
-            mBinding.flipper.showNext()
+            startNextAnimation()
         }
 
         mBinding.textViewSignIn.setOnClickListener {
-            mBinding.flipper.setInAnimation(this, R.anim.slide_in_right)
-            mBinding.flipper.setOutAnimation(this, R.anim.slide_out_left)
-            mBinding.flipper.showPrevious()
+            startPreviousAnimation()
+        }
+
+        mBinding.textViewGoToProfile.setOnClickListener {
+            startNextAnimation()
+        }
+
+        mBinding.textViewSignUp.setOnClickListener {
+            startPreviousAnimation()
         }
     }
 
@@ -92,5 +96,17 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "The account wasn't created", Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    private fun startNextAnimation() {
+        mBinding.flipper.setInAnimation(this, android.R.anim.slide_in_left)
+        mBinding.flipper.setOutAnimation(this, android.R.anim.slide_out_right)
+        mBinding.flipper.showNext()
+    }
+
+    private fun startPreviousAnimation() {
+        mBinding.flipper.setInAnimation(this, R.anim.slide_in_right)
+        mBinding.flipper.setOutAnimation(this, R.anim.slide_out_left)
+        mBinding.flipper.showPrevious()
     }
 }
