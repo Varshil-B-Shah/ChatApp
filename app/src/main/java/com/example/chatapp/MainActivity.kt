@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,7 +27,7 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     private lateinit var mBinding: ActivityMainBinding
     private lateinit var getResult: ActivityResultLauncher<Intent>
-    private val STORAGE_REQUEST_CODE = 23432
+    private val storageRequestCode = 23432
     private lateinit var uri: Uri
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
     private val usersRef: CollectionReference = db.collection("Users")
@@ -78,7 +79,7 @@ class MainActivity : AppCompatActivity() {
                     ActivityCompat.requestPermissions(
                         this,
                         arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                        STORAGE_REQUEST_CODE
+                        storageRequestCode
                     )
                 } else {
                     getImage()
@@ -98,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun signIn() {
+        showProgressBar1()
         val email = mBinding.signInInputEmail.editText?.text.toString().trim()
         val password = mBinding.singInInputPassword.editText?.text.toString().trim()
 
@@ -107,6 +109,7 @@ class MainActivity : AppCompatActivity() {
                 "You have to provide an email and a password to sign-in",
                 Toast.LENGTH_LONG
             ).show()
+            hideProgressBar1()
             return
         }
 
@@ -114,17 +117,21 @@ class MainActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     Toast.makeText(this, "User Signed in successful", Toast.LENGTH_LONG).show()
+                    hideProgressBar1()
+                    sendToAct()
                 } else {
                     Toast.makeText(
                         this,
                         "Couldn't sign in \nSomething went wrong ",
                         Toast.LENGTH_LONG
                     ).show()
+                    hideProgressBar1()
                 }
             }
     }
 
     private fun createAccount() {
+        showProgressBar2()
         val email = mBinding.signUpInputEmail.text.toString().trim()
         val password = mBinding.signUpInputPassword.text.toString().trim()
         val confirmPassword = mBinding.signUpInputConfirmPassword.text.toString().trim()
@@ -136,6 +143,7 @@ class MainActivity : AppCompatActivity() {
                 "You have to provide an email and a password to sign-in",
                 Toast.LENGTH_LONG
             ).show()
+            hideProgressBar2()
             return
         }
 
@@ -145,6 +153,7 @@ class MainActivity : AppCompatActivity() {
                 "You should provide an username",
                 Toast.LENGTH_LONG
             ).show()
+            hideProgressBar2()
             return
         }
 
@@ -154,6 +163,7 @@ class MainActivity : AppCompatActivity() {
                 "Passwords don't match",
                 Toast.LENGTH_LONG
             ).show()
+            hideProgressBar2()
             return
         }
 
@@ -163,6 +173,7 @@ class MainActivity : AppCompatActivity() {
                 "Passwords should have at least 6 characters",
                 Toast.LENGTH_LONG
             ).show()
+            hideProgressBar2()
             return
         }
 
@@ -172,7 +183,20 @@ class MainActivity : AppCompatActivity() {
                     if (this::uri.isInitialized) {
                         uploadProfileImage(username)
                     } else {
-
+                        val uid = FirebaseAuth.getInstance().currentUser!!.uid
+                        val user = User(username, "", uid)
+                        usersRef.document(uid)
+                            .set(user)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Account created", Toast.LENGTH_LONG).show()
+                                hideProgressBar2()
+                                sendToAct()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(this, "Account wasn't created", Toast.LENGTH_LONG)
+                                    .show()
+                                hideProgressBar2()
+                            }
                     }
                 } else {
                     Toast.makeText(this, "The account wasn't created", Toast.LENGTH_LONG).show()
@@ -208,7 +232,7 @@ class MainActivity : AppCompatActivity() {
         ActivityCompat.requestPermissions(
             this,
             arrayOf(permission),
-            STORAGE_REQUEST_CODE
+            storageRequestCode
         )
     }
 
@@ -218,12 +242,13 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == STORAGE_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == storageRequestCode && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             getImage()
         } else {
             Toast.makeText(this@MainActivity, "Permission not granted", Toast.LENGTH_LONG).show()
         }
     }
+
     private fun uploadProfileImage(username: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -242,7 +267,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 val filename = "profile_${FirebaseAuth.getInstance().currentUser!!.uid}.$ext"
 
-                val file = InputFile.fromBytes(bytes = bytes, filename = filename, mimeType = mimeType)
+                val file =
+                    InputFile.fromBytes(bytes = bytes, filename = filename, mimeType = mimeType)
 
                 val response = AppwriteClient.storage.createFile(
                     bucketId = BuildConfig.APPWRITE_BUCKET_ID,
@@ -254,15 +280,17 @@ class MainActivity : AppCompatActivity() {
 
                 runOnUiThread {
                     saveUser(username, fileId)
-                    Toast.makeText(this@MainActivity, "Upload successful", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Upload successful", Toast.LENGTH_SHORT)
+                        .show()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Upload failed", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Upload failed: ${e.stackTrace}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
+
     private fun saveUser(username: String, fileId: String) {
         val uid = FirebaseAuth.getInstance().currentUser!!.uid
         val user = User(username, fileId, uid)
@@ -270,14 +298,32 @@ class MainActivity : AppCompatActivity() {
             .set(user)
             .addOnSuccessListener {
                 Toast.makeText(this, "Account created", Toast.LENGTH_LONG).show()
+                hideProgressBar2()
                 sendToAct()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Account wasn't created", Toast.LENGTH_LONG).show()
+                hideProgressBar2()
             }
     }
 
     private fun sendToAct() {
         startActivity(Intent(this@MainActivity, ChatActivity::class.java))
+    }
+
+    private fun showProgressBar1() {
+        mBinding.progressBar1.visibility = View.VISIBLE
+    }
+
+    private fun hideProgressBar1() {
+        mBinding.progressBar1.visibility = View.INVISIBLE
+    }
+
+    private fun showProgressBar2() {
+        mBinding.progressBar2.visibility = View.VISIBLE
+    }
+
+    private fun hideProgressBar2() {
+        mBinding.progressBar2.visibility = View.INVISIBLE
     }
 }
