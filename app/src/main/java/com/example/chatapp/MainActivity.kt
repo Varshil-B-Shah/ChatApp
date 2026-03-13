@@ -13,10 +13,10 @@ import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import com.example.chatapp.databinding.ActivityMainBinding
 import com.example.chatapp.model.User
+import com.example.chatapp.ui.ChatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.StorageReference
 import io.appwrite.ID
 import io.appwrite.models.InputFile
 import kotlinx.coroutines.CoroutineScope
@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (password.length <= 6) {
+        if (password.length < 6) {
             Toast.makeText(
                 this,
                 "Passwords should have at least 6 characters",
@@ -169,9 +169,10 @@ class MainActivity : AppCompatActivity() {
         FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "Account Created", Toast.LENGTH_LONG).show()
                     if (this::uri.isInitialized) {
                         uploadProfileImage(username)
+                    } else {
+
                     }
                 } else {
                     Toast.makeText(this, "The account wasn't created", Toast.LENGTH_LONG).show()
@@ -269,9 +270,14 @@ class MainActivity : AppCompatActivity() {
             .set(user)
             .addOnSuccessListener {
                 Toast.makeText(this, "Account created", Toast.LENGTH_LONG).show()
+                sendToAct()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Account wasn't created", Toast.LENGTH_LONG).show()
             }
+    }
+
+    private fun sendToAct() {
+        startActivity(Intent(this@MainActivity, ChatActivity::class.java))
     }
 }
