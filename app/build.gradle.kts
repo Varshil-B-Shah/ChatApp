@@ -17,6 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "APPWRITE_ENDPOINT", "\"https://nyc.cloud.appwrite.io/v1\"")
+        buildConfigField("String", "APPWRITE_PROJECT_ID", "\"69b3257a0004a23dcd47\"")
+        buildConfigField("String", "APPWRITE_BUCKET_ID", "\"69b329ed000e5f3ecd6b\"")
     }
 
     buildTypes {
@@ -36,6 +40,7 @@ android {
     buildFeatures {
         dataBinding = true
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -47,10 +52,12 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(platform("com.google.firebase:firebase-bom:34.10.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.mikhaellopez:circularimageview:4.3.1")
+    implementation("io.appwrite:sdk-for-android:22.2.0")
 }
