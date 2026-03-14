@@ -32,7 +32,8 @@
             android:inputType="text"
             android:paddingStart="10dp"
             android:paddingEnd="5dp"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:drawableEnd="@drawable/ic_send_image"/>
 
         <Button
             android:id="@+id/send_message_button"

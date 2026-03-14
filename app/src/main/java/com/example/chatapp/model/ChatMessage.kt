@@ -6,6 +6,7 @@ import java.util.Date
 data class ChatMessage(
     val sender: User = User(),
     val message: String = "",
+    val imageId: String? = null,  // ADD THIS
     @ServerTimestamp
     val timestamp: Date? = null
 )

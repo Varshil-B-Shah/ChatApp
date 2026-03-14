@@ -1,11 +1,10 @@
 package com.example.chatapp.adaptor
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -36,45 +35,64 @@ class MessagesAdaptor(
         }
     }
 
-    init {
-        registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                val newMessage = messages.lastOrNull() ?: return
+//    init {
+//        registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+//            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+//                val newMessage = messages.lastOrNull() ?: return
+//
+//                // Avoid duplicates
+//                if (orderedMessages.any {
+//                        it.message == newMessage.message &&
+//                                it.sender.id == newMessage.sender.id &&
+//                                it.timestamp == newMessage.timestamp
+//                    }) return
+//
+//                // Insert at correct chronological position
+//                val insertPos = if (newMessage.timestamp == null) {
+//                    orderedMessages.size
+//                } else {
+//                    orderedMessages.indexOfFirst { existing ->
+//                        existing.timestamp != null && existing.timestamp.after(newMessage.timestamp)
+//                    }.takeIf { it >= 0 } ?: orderedMessages.size
+//                }
+//
+//                orderedMessages.add(insertPos, newMessage)
+//
+//                Handler(Looper.getMainLooper()).post {
+//                    notifyDataSetChanged()
+//                }
+//            }
+//        })
+//    }
 
-                // Avoid duplicates
-                if (orderedMessages.any {
-                        it.message == newMessage.message &&
-                                it.sender.id == newMessage.sender.id &&
-                                it.timestamp == newMessage.timestamp
-                    }) return
+    fun addMessage(newMessage: ChatMessage) {
+        if (orderedMessages.any {
+                it.message == newMessage.message &&
+                        it.sender.id == newMessage.sender.id &&
+                        it.timestamp == newMessage.timestamp
+            }) return
 
-                // Insert at correct chronological position
-                val insertPos = if (newMessage.timestamp == null) {
-                    orderedMessages.size
-                } else {
-                    orderedMessages.indexOfFirst { existing ->
-                        existing.timestamp != null && existing.timestamp.after(newMessage.timestamp)
-                    }.takeIf { it >= 0 } ?: orderedMessages.size
-                }
+        val insertPos = if (newMessage.timestamp == null) {
+            orderedMessages.size
+        } else {
+            orderedMessages.indexOfFirst { existing ->
+                existing.timestamp != null && existing.timestamp.after(newMessage.timestamp)
+            }.takeIf { it >= 0 } ?: orderedMessages.size
+        }
 
-                orderedMessages.add(insertPos, newMessage)
-
-                Handler(Looper.getMainLooper()).post {
-                    notifyDataSetChanged()
-                }
-            }
-        })
+        orderedMessages.add(insertPos, newMessage)
+        notifyItemInserted(insertPos)
     }
 
-    // --- Sent ViewHolder (no profile image) ---
     class SentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val messageText: TextView = itemView.findViewById(R.id.textViewMessage)
+        val messageImage: ImageView = itemView.findViewById(R.id.imageViewMessageImage)
     }
 
-    // --- Received ViewHolder (with profile image) ---
     class ReceivedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val profileImage: CircularImageView = itemView.findViewById(R.id.imageViewProfile)
         val messageText: TextView = itemView.findViewById(R.id.textViewMessage)
+        val messageImage: ImageView = itemView.findViewById<ImageView>(R.id.imageViewMessageImage)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -97,18 +115,36 @@ class MessagesAdaptor(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val message = orderedMessages[position]
 
+        // Helper to load message image — reuses the same buildProfileImageUrl since
+        // chat images are stored in the same Appwrite bucket
+        fun loadMessageImage(imageView: ImageView, imageId: String?) {
+            if (!imageId.isNullOrEmpty()) {
+                imageView.visibility = View.VISIBLE
+                Glide.with(context)
+                    .load(buildProfileImageUrl(imageId))
+                    .placeholder(R.drawable.ic_profile)
+                    .error(R.drawable.ic_profile)
+                    .into(imageView)
+            } else {
+                imageView.visibility = View.GONE
+            }
+        }
+
         when (holder) {
             is SentViewHolder -> {
                 holder.messageText.text = message.message
+                loadMessageImage(holder.messageImage, message.imageId)
             }
+
             is ReceivedViewHolder -> {
                 holder.messageText.text = message.message
+                loadMessageImage(holder.messageImage, message.imageId)
+                // existing profile image logic stays the same...
                 val imageId = message.sender.profileImage
                 if (imageId.isNotEmpty()) {
                     Glide.with(context)
                         .load(buildProfileImageUrl(imageId))
                         .placeholder(R.drawable.ic_profile)
-                        .error(R.drawable.ic_profile)
                         .into(holder.profileImage)
                 } else {
                     holder.profileImage.setImageResource(R.drawable.ic_profile)
