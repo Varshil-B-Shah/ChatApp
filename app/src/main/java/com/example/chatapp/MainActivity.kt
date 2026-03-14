@@ -285,7 +285,11 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Upload failed: ${e.stackTrace}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Upload failed: ${e.stackTrace}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -316,7 +320,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideProgressBar1() {
-        mBinding.progressBar1.visibility = View.INVISIBLE
+        mBinding.progressBar1.visibility = View.GONE
     }
 
     private fun showProgressBar2() {
@@ -324,6 +328,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideProgressBar2() {
-        mBinding.progressBar2.visibility = View.INVISIBLE
+        mBinding.progressBar2.visibility = View.GONE
     }
 }

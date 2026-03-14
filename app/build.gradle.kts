@@ -60,4 +60,5 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.mikhaellopez:circularimageview:4.3.1")
     implementation("io.appwrite:sdk-for-android:22.2.0")
+    implementation("com.github.bumptech.glide:glide:5.0.5")
 }
