@@ -313,6 +313,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun sendToAct() {
         startActivity(Intent(this@MainActivity, ChatActivity::class.java))
+        finish()
     }
 
     private fun showProgressBar1() {
