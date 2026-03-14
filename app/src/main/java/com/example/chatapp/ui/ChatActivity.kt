@@ -51,35 +51,37 @@ class ChatActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        messagesRef.addSnapshotListener { snapshots, error ->
-            error?.let {
-                return@addSnapshotListener
-            }
+        messagesRef.orderBy("timestamp")
+            .addSnapshotListener { snapshots, error ->
+                error?.let {
+                    return@addSnapshotListener
+                }
 
-            snapshots?.let {
-                for(dc in it.documentChanges) {
-                    val oldIndex = dc.oldIndex
-                    val newIndex = dc.newIndex
+                snapshots?.let {
+                    for (dc in it.documentChanges) {
+                        val oldIndex = dc.oldIndex
+                        val newIndex = dc.newIndex
 
-                    when(dc.type) {
-                        DocumentChange.Type.ADDED -> {
-                            val snapshot = dc.document
-                            val message = snapshot.toObject(ChatMessage::class.java)
-                            messages.add(message)
-                            messageAdaptor.notifyItemInserted(newIndex)
-                        }
+                        when (dc.type) {
+                            DocumentChange.Type.ADDED -> {
+                                val snapshot = dc.document
+                                val message = snapshot.toObject(ChatMessage::class.java)
+                                messages.add(message)
+                                messageAdaptor.notifyItemInserted(newIndex)
+                                messagesRecyclerView.smoothScrollToPosition(messages.size - 1)
+                            }
 
-                        DocumentChange.Type.REMOVED -> {
+                            DocumentChange.Type.REMOVED -> {
 
-                        }
+                            }
 
-                        DocumentChange.Type.MODIFIED -> {
+                            DocumentChange.Type.MODIFIED -> {
 
+                            }
                         }
                     }
                 }
             }
-        }
     }
 
     private fun initRecyclerView() {
@@ -94,7 +96,7 @@ class ChatActivity : AppCompatActivity() {
         usersRef.whereEqualTo("id", FirebaseAuth.getInstance().currentUser?.uid)
             .get()
             .addOnSuccessListener {
-                for(snapshot in it){
+                for (snapshot in it) {
                     currentUser = snapshot.toObject(User::class.java)
                 }
             }
@@ -103,19 +105,19 @@ class ChatActivity : AppCompatActivity() {
     private fun insertMessage() {
         val message = editTextMessage.text.toString()
 
-        if (message.isNotEmpty()){
+        if (message.isNotEmpty()) {
             messagesRef.document()
-                .set(ChatMessage(currentUser,message))
+                .set(ChatMessage(currentUser, message, null))
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.chat_menu,menu)
+        menuInflater.inflate(R.menu.chat_menu, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
+        when (item.itemId) {
             R.id.item_sign_out -> {
                 FirebaseAuth.getInstance().signOut()
                 Intent(this@ChatActivity, MainActivity::class.java).also {
